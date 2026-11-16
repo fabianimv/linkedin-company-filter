@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn Company Filter</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">in</div>
+        <div>
+          <h1>Company Filter</h1>
+          <p class="subtitle">Clean up your LinkedIn feed &amp; jobs</p>
+        </div>
+      </div>
+      <label class="switch" title="Enable or disable filter">
+        <input type="checkbox" id="enabledToggle" />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <section class="stats-bar">
+      <div class="stat">
+        <span class="stat-value" id="pageHiddenCount">0</span>
+        <span class="stat-label">Hidden on page</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="totalHiddenCount">0</span>
+        <span class="stat-label">Total hidden</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">Blocked Companies</div>
+      <form id="addCompanyForm" class="input-row">
+        <input
+          type="text"
+          id="companyInput"
+          placeholder="Add company name..."
+          autocomplete="off"
+        />
+        <button type="submit" class="btn-primary">Add</button>
+      </form>
+      <div id="companyList" class="chip-list"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">Where to Filter</div>
+      <label class="check-row">
+        <input type="checkbox" id="scopeFeed" />
+        <span>Feed posts &amp; reposts</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="scopeJobs" />
+        <span>Job listings</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="scopePeople" />
+        <span>People search &amp; suggestions</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="scopeConnections" />
+        <span>Highlight &amp; isolate on Connections page</span>
+      </label>
+      <div class="divider"></div>
+      <label class="check-row">
+        <input type="checkbox" id="wholeWordToggle" />
+        <span>Whole-word matching (recommended)</span>
+      </label>
+    </section>
+
+    <footer class="footer">
+      <button type="button" id="openConnectionsBtn" class="btn-link">
+        Open Connections
+      </button>
+      <button type="button" id="resetBtn" class="btn-ghost">
+        Reset defaults
+      </button>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
