@@ -152,6 +152,24 @@
     });
   }
 
+  function findSingleCardContainer(startEl, itemSelectorForUniqueness) {
+    let node = startEl;
+    let steps = 0;
+    while (node && node.parentElement && steps < 8) {
+      const parent = node.parentElement;
+      const tag = parent.tagName;
+      if (tag === 'MAIN' || tag === 'BODY' || tag === 'SECTION' || parent.getAttribute('role') === 'main') {
+        break;
+      }
+      if (parent.querySelectorAll(itemSelectorForUniqueness).length > 1) {
+        break;
+      }
+      node = parent;
+      steps += 1;
+    }
+    return node;
+  }
+
   function processJobs() {
     if (!settings.enabled || !settings.scopes.jobs) return;
     const itemSelectors = [
@@ -168,7 +186,6 @@
 
     const collectContainer = (el) => {
       if (!el) return;
-      // Avoid hiding the right-hand job details pane
       if (
         el.closest(
           '.jobs-search__job-details, .jobs-details, .job-details-jobs-unified-top-card__container'
@@ -176,24 +193,37 @@
       ) {
         return;
       }
+      if (seen.has(el)) return;
+      seen.add(el);
+
+      const text = el.innerText || el.textContent || '';
+      const matched = matchCompany(text);
+      setCardHidden(el, Boolean(matched), 'jobs');
+    };
+
+    document.querySelectorAll(itemSelectors.join(',')).forEach((el) => {
       const container =
         el.closest(
           'li[data-occludable-job-id], .jobs-search-results__list-item, .scaffold-layout__list-item, li'
         ) || el;
-      if (seen.has(container)) return;
-      seen.add(container);
+      collectContainer(container);
+    });
 
-      const text = container.innerText || container.textContent || '';
-      const matched = matchCompany(text);
-      setCardHidden(container, Boolean(matched), 'jobs');
-    };
+    // Semantic fallback for hashed-CSS or div-based LinkedIn job lists
+    const jobLinkSelector = 'a[href*="/jobs/view/"], a[href*="currentJobId="]';
+    document.querySelectorAll(jobLinkSelector).forEach((link) => {
+      const container =
+        link.closest('li[data-occludable-job-id], [data-job-id], [data-view-name="job-card"], li, [role="listitem"]') ||
+        findSingleCardContainer(link, jobLinkSelector);
+      collectContainer(container);
+    });
 
-    document.querySelectorAll(itemSelectors.join(',')).forEach(collectContainer);
-
-    // Semantic fallback for hashed-CSS LinkedIn job lists
-    document.querySelectorAll('a[href*="/jobs/view/"]').forEach((link) => {
-      const li = link.closest('li');
-      if (li) collectContainer(li);
+    const dismissSelector = 'button[aria-label*="Dismiss"], button[aria-label*="Descartar"]';
+    document.querySelectorAll(dismissSelector).forEach((btn) => {
+      const container =
+        btn.closest('li, [role="listitem"], [data-view-name="job-card"]') ||
+        findSingleCardContainer(btn, dismissSelector);
+      collectContainer(container);
     });
   }
 
