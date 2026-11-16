@@ -28,7 +28,9 @@
     scopeConnections: document.getElementById('scopeConnections'),
     wholeWordToggle: document.getElementById('wholeWordToggle'),
     openConnectionsBtn: document.getElementById('openConnectionsBtn'),
-    resetBtn: document.getElementById('resetBtn')
+    resetBtn: document.getElementById('resetBtn'),
+    reloadNotice: document.getElementById('reloadNotice'),
+    reloadTabBtn: document.getElementById('reloadTabBtn')
   };
 
   let state = structuredClone(DEFAULT_SETTINGS);
@@ -77,18 +79,24 @@
     renderCompanies();
   }
 
+  let activeLinkedInTabId = null;
+
   function fetchActiveTabStats() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs?.[0];
       if (!tab?.id || !tab.url?.includes('linkedin.com')) {
         els.pageHiddenCount.textContent = '0';
+        els.reloadNotice.hidden = true;
         return;
       }
+      activeLinkedInTabId = tab.id;
       chrome.tabs.sendMessage(tab.id, { type: 'LCF_GET_STATS' }, (res) => {
         if (chrome.runtime.lastError || !res?.sessionStats) {
           els.pageHiddenCount.textContent = '0';
+          els.reloadNotice.hidden = false;
           return;
         }
+        els.reloadNotice.hidden = true;
         const s = res.sessionStats;
         const pageTotal = (s.feed || 0) + (s.jobs || 0) + (s.people || 0);
         els.pageHiddenCount.textContent = String(pageTotal);
@@ -151,6 +159,13 @@
         totalHidden: keepTotal
       };
       chrome.storage.local.set(state, renderUI);
+    });
+
+    els.reloadTabBtn.addEventListener('click', () => {
+      if (activeLinkedInTabId) {
+        chrome.tabs.reload(activeLinkedInTabId);
+        window.close();
+      }
     });
   }
 

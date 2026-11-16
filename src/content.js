@@ -137,7 +137,8 @@
       '.feed-shared-update-v2',
       '[data-urn^="urn:li:activity:"]',
       '[data-id^="urn:li:activity:"]',
-      '[data-view-name="feed-full-update"]'
+      '[data-view-name="feed-full-update"]',
+      '[role="article"]'
     ];
     const candidates = document.querySelectorAll(selectors.join(','));
     candidates.forEach((card) => {
@@ -145,7 +146,7 @@
       const parentCard = card.parentElement?.closest(selectors.join(','));
       if (parentCard) return;
 
-      const text = card.innerText || '';
+      const text = card.innerText || card.textContent || '';
       const matched = matchCompany(text);
       setCardHidden(card, Boolean(matched), 'feed');
     });
@@ -155,19 +156,44 @@
     if (!settings.enabled || !settings.scopes.jobs) return;
     const itemSelectors = [
       'li[data-occludable-job-id]',
+      '[data-job-id]',
+      '[data-view-name="job-card"]',
+      '.job-card-job-posting-card-wrapper',
       '.jobs-search-results__list-item',
       '.scaffold-layout__list-item',
-      '.job-card-container'
+      '.job-card-container',
+      '.discovery-templates-entity-item'
     ];
     const seen = new Set();
-    document.querySelectorAll(itemSelectors.join(',')).forEach((el) => {
-      const container = el.closest('li[data-occludable-job-id], .jobs-search-results__list-item, .scaffold-layout__list-item') || el;
+
+    const collectContainer = (el) => {
+      if (!el) return;
+      // Avoid hiding the right-hand job details pane
+      if (
+        el.closest(
+          '.jobs-search__job-details, .jobs-details, .job-details-jobs-unified-top-card__container'
+        )
+      ) {
+        return;
+      }
+      const container =
+        el.closest(
+          'li[data-occludable-job-id], .jobs-search-results__list-item, .scaffold-layout__list-item, li'
+        ) || el;
       if (seen.has(container)) return;
       seen.add(container);
 
-      const text = container.innerText || '';
+      const text = container.innerText || container.textContent || '';
       const matched = matchCompany(text);
       setCardHidden(container, Boolean(matched), 'jobs');
+    };
+
+    document.querySelectorAll(itemSelectors.join(',')).forEach(collectContainer);
+
+    // Semantic fallback for hashed-CSS LinkedIn job lists
+    document.querySelectorAll('a[href*="/jobs/view/"]').forEach((link) => {
+      const li = link.closest('li');
+      if (li) collectContainer(li);
     });
   }
 
@@ -182,18 +208,29 @@
       '[data-view-name="cohort-card"]'
     ];
     const seen = new Set();
-    document.querySelectorAll(selectors.join(',')).forEach((el) => {
-      const container = el.closest('li.reusable-search__result-container, li.discover-fluid-entity-list--item') || el;
+
+    const collectContainer = (el) => {
+      if (!el || isJobsPage()) return;
+      const container =
+        el.closest(
+          'li.reusable-search__result-container, li.discover-fluid-entity-list--item, li[role="listitem"], li'
+        ) || el;
       if (seen.has(container)) return;
       seen.add(container);
 
-      // Don't hide non-people job cards here if jobs scope is off
-      if (isJobsPage()) return;
-
-      const text = container.innerText || '';
+      const text = container.innerText || container.textContent || '';
       const matched = matchCompany(text);
       setCardHidden(container, Boolean(matched), 'people');
-    });
+    };
+
+    document.querySelectorAll(selectors.join(',')).forEach(collectContainer);
+
+    // Semantic fallback for search/network people cards
+    if (isSearchPage() || isNetworkPage()) {
+      document
+        .querySelectorAll('main li a[href*="/in/"]')
+        .forEach((link) => collectContainer(link.closest('li')));
+    }
   }
 
   function ensureConnectionsToolbar(matchedCount, totalCount) {
